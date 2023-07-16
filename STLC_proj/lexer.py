@@ -134,6 +134,26 @@ def is_digit(string: str) -> bool:
         return False
 
 
+def is_operator(string: str) -> bool:
+    # Verifica que sea operador
+    if len(string) > 0:
+        operator = string[0]
+        if (
+            operator == "+"
+            or operator == "-"
+            or operator == "*"
+            or operator == "/"
+            or operator == "<"
+            or operator == ">"
+            or operator == "="  # Para verificar una igualdad en bool
+            or operator == "&"
+            or operator == "|"
+            or operator == "~"
+        ):
+            return True
+    return False
+
+
 def lexer_variable(stream: Stream) -> Optional[Variable]:
     acc: list[str] = []
     orig_post = stream.get_posicion()
@@ -173,7 +193,7 @@ def lexer_variable(stream: Stream) -> Optional[Variable]:
             return None
 
 
-print(lexer_variable(Stream("_augiugk$b")))
+# print(lexer_variable(Stream("_augiugk$b")))
 
 
 def lexer_int(stream: Stream) -> Optional[Int]:
@@ -215,7 +235,6 @@ def lexer_int(stream: Stream) -> Optional[Int]:
     return Int(int("".join(acc)))
 
 
-
 """            
 print(lexer_int(Stream("-121+3-4"))) 
         
@@ -228,3 +247,64 @@ p =lexer_variable(b)
 print(p,"p")
 print(b,"b")
 """
+
+
+def lexer_operator(stream: Stream) -> Optional[Operator]:
+    orig_post = stream.get_posicion()
+    char = stream.get_char()
+    if char is None:
+        return None
+    if is_operator(char):
+        match char:
+            case "-":
+                stream.consume()
+                next_char = stream.get_char()
+                if next_char is None:
+                    return Operator(char)
+                if is_digit(next_char):
+                    stream.colcar_posicion(orig_post)
+                    return None
+                return Operator(char)
+            case "<":
+                stream.consume()
+                next_char = stream.get_char()
+                if next_char is None:
+                    return Operator(char)
+                if next_char == "=":
+                    stream.colcar_posicion(orig_post)
+                    return Operator(char + next_char)
+                if next_char == " " or is_digit(next_char):
+                    stream.colcar_posicion(orig_post)
+                    return Operator(char)
+                return Operator(char)
+            case ">":
+                stream.consume()
+                next_char = stream.get_char()
+                if next_char is None:
+                    return Operator(char)
+                if next_char == "=":
+                    return Operator(char + next_char)
+                if next_char == " " or is_digit(next_char):
+                    return Operator(char)
+                return Operator(char)
+            case "=":
+                stream.consume()
+                next_char = stream.get_char()
+                if next_char is None:
+                    return Operator(char)
+                if next_char == "=":
+                    return Operator(char + next_char)
+                if next_char == " " or is_digit(next_char):
+                    stream.colcar_posicion(orig_post)
+                    return None
+                return Operator(char)
+            case _:
+                return Operator(char)
+        return Operator(char)
+    else:
+        return None
+
+
+"""operadores=["+", "-", "*", "/", "<", ">", "<=", ">=", "==", "&", "|","~"]
+for op in operadores:
+    print(op," es operador: ",lexer_operator(Stream(op)))"""
