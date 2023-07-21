@@ -28,6 +28,11 @@ Token = Union[
 
 
 @dataclass
+class Variable:
+    name: str
+
+
+@dataclass
 class Int:
     value: int
 
@@ -48,12 +53,17 @@ class Bool:
 
 
 @dataclass
-class Variable:
-    name: str
+class BoolType:
+    pass
 
 
 @dataclass
-class BoolType:
+class UnitExp:
+    pass
+
+
+@dataclass
+class UnitType:
     pass
 
 
@@ -84,16 +94,6 @@ class LineLambda:
 
 @dataclass
 class Twop:
-    pass
-
-
-@dataclass
-class UnitExp:
-    pass
-
-
-@dataclass
-class UnitType:
     pass
 
 
@@ -188,12 +188,26 @@ def lexer_variable(stream: Stream) -> Optional[Variable]:
             final_str = "".join(acc)
             if final_str == "_":
                 return None
+            elif final_str == "True":
+                stream.colcar_posicion(orig_post)
+                return None
+            elif final_str == "False":
+                stream.colcar_posicion(orig_post)
+                return None
             return Variable("".join(acc))
         else:
             return None
 
 
-# print(lexer_variable(Stream("_augiugk$b")))
+#print(lexer_variable(Stream("_augiugk$b")))
+print("Prueba lexer_variable: ")
+#s = Stream("_")
+#print(lexer_variable(s),s.get_posicion())
+
+#s = Stream("_variable")
+#lex_var =lexer_variable(s)
+#if lex_var is not None:
+#    print(len(lex_var.name),s.get_posicion())
 
 
 def lexer_int(stream: Stream) -> Optional[Int]:
@@ -308,3 +322,41 @@ def lexer_operator(stream: Stream) -> Optional[Operator]:
 """operadores=["+", "-", "*", "/", "<", ">", "<=", ">=", "==", "&", "|","~"]
 for op in operadores:
     print(op," es operador: ",lexer_operator(Stream(op)))"""
+
+
+def lexer_bool(stream: Stream) -> Optional[Bool]:
+    acc: list[str] = []
+    orig_post = stream.get_posicion()
+    char = stream.get_char()
+    if char is None:
+        return None
+    else:
+        if (char == "T") or (char == "F"):
+            acc.append(char)
+            stream.consume()
+            char = stream.get_char()
+            if char is None:
+                stream.colcar_posicion(orig_post)
+                return None
+            while char >= "a" and char <= "z":
+                acc.append(char)
+                stream.consume()
+                char = stream.get_char()
+                if char is None:
+                    break
+            final_str = "".join(acc)
+
+            if (
+                final_str == "True"
+            ):  # identifica que la cadena corresponda a la variable Booleana True o False
+                return Bool(True)
+            elif final_str == "False":
+                return Bool(False)
+
+            return None
+        else:
+            return None
+
+
+def lexer_unit(stream: Stream) -> Optional[UnitExp]:
+    pass

@@ -1,0 +1,35 @@
+expression : variable
+    | literal 
+    | "(" expression expression ")"
+    |"\" variable "->"  expression
+    | "(" expression operator expression ")"
+    | "if" expression "then" expression "else" expression
+    | "(" expression ":" type ")"
+
+(YA) variable_character : "a" | ... | "z" | "A" | ... | "Z"
+(YA) variable : "_" variable_character+ | variable_character+
+
+literal : bool_literal | int_literal | "unit"
+
+(YA)bool_literal : True | False
+
+(YA) int_literal : 0 | 1 | -1 | 2 | -2 | ...         
+
+(YA) operator: "+" | "-" | "*" | "/" | "<" | ">" | "<=" | ">=" | "==" | "&" | "|" |"~"
+
+type : "Bool" | "Int" | "Unit" | "(" type "->" type ")"
+
+variable_definition : variable "=" expression
+variable_declaration : variable ":" type
+
+
+
+lexers necesarios:
+- variable ............... (YA)
+- entero   ............... (YA)
+- operador ............... (YA)
+- bool     ............... (YA)
+- unit
+- literal
+- if..then
+- 
