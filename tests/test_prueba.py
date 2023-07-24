@@ -12,6 +12,8 @@ from STLC_proj.lexer import (
     UnitExp,
 )
 
+import pytest  # buscar cómo arreglar este error en editor
+
 
 def make_positive_test(
     lexer, string: str, value
@@ -29,122 +31,148 @@ def make_negative_test(
     # print(result)
     # print(value)
     assert result is None
-    
-def make_position_test(
+
+
+def make_positive_position_test(
+    lexer, string: str,final_position
+):  # Refactoriza los test predefinidos para la posición
+    s = Stream(string)
+    lex_var = lexer(s)
+    assert (
+        s.get_posicion() == final_position
+    )  # si identifica variable, posicion toma longitud de la cadena
+
+
+def make_negative_position_test(
     lexer, string: str
 ):  # Refactoriza los test predefinidos para la posición
     s = Stream(string)
-    lex_var =lexer_variable(s)
-    if lex_var is not None: # si identifica variable, posicion toma longitud de la cadena
-        assert len(lex_var.name) == s.get_posicion()
-    else: # en el caso contrario, posición original
-        assert s.get_posicion() == 0
+    lex_var = lexer(s)
+    assert s.get_posicion() == 0  # verifica regreso a posición original
+
 
 
 """ ***************** Test de Variable  ******************** """
 
-def test_lexer_variable_guion():  # Prueba variables con guión
-    make_positive_test(lexer_variable, "_cajas = 5", Variable("_cajas"))
+@pytest.mark.parametrize(
+    "stream,expected",
+    [
+        ("_cajas = 5", Variable("_cajas")),  # Prueba variables con guión
+        ("cajas = 5", Variable("cajas")),
+        ("caJas = 5", Variable("caJas")),  # prueba con mayúsculas
+        ("c = 5", Variable("c")),  # prueba con una sola variable
+    ]
+)
+def test_variable_positive(stream: str, expected: Variable):
+    make_positive_test(lexer_variable, stream, expected)
+
+@pytest.mark.parametrize( # Prueba cadenas con salida None
+    "stream",
+    [  
+        "_",  # Prueba con guión
+        "125caJas = 5",  # Prueba con dígitos
+        "=$125caJas = 5",  # Prueba con simbolos no reconocidos
+        "True",  # Prueba con booleanas
+        "False",
+        ""  # Prueba con cadena vacía
+    ]
+)
+def test_variable_negative(stream: str):
+    make_negative_test(lexer_variable, stream)
 
 
-def test_lexer_variable_minusculas():  # Prueba variables en minúsculas
-    make_positive_test(lexer_variable, "cajas = 5", Variable("cajas"))
+@pytest.mark.parametrize(
+    "stream", ["_cajas = 5", "cajas = 5", "caJas = 5", "c = 5"]
+)  # Prueba posicion para cadenas con salida Variable
+def test_lexer_variable_positive_posicion(stream: str):
+    lenght = len(lexer_variable(Stream(stream)).name)
+    make_positive_position_test(lexer_variable, stream, lenght)
 
 
-def test_lexer_variable_mayusculas():  # Prueba variables en mayúscula
-    make_positive_test(lexer_variable, "caJas = 5", Variable("caJas"))
-
-
-def test_lexer_variable_unicaracter():  # Prueba variables con un solo caracter
-    make_positive_test(lexer_variable, "c = 5", Variable("c"))
-
-
-def test_lexer_variable_none():  # Prueba variables con salida None
-    make_negative_test(lexer_variable, "_")
-
-def test_lexer_variable_no_digito():  # Prueba variables que comiencen con dígitos
-    make_negative_test(lexer_variable, "125caJas = 5")
-
-def test_lexer_variable_no_otrosvalores():  # Prueba variables que comiencen con cualquier otro símbolo
-    make_negative_test(lexer_variable, "=$125caJas = 5")
-    
-def test_lexer_variable_True():  # Prueba variables Booleanas con salida None
-    make_negative_test(lexer_variable, "True")
-    
-def test_lexer_variable_False():  # Prueba variables Booleanas  con salida None
-    make_negative_test(lexer_variable, "False")
-
-def test_lexer_variable_vacio():  # Prueba variable en cadena vacía
-    make_negative_test(lexer_variable, "")
-
-""" Test de Posicion en lexer Variable """
-def test_lexer_variable_posicion_guion():  # Prueba posicion para variables con salida Variable
-    make_position_test(lexer_variable, "_cajas = 5")
-
-def test_lexer_variable_posicion_minusculas(): 
-    make_position_test(lexer_variable, "cajas = 5")
-
-def test_lexer_variable_posicion_mayusculas():
-    make_position_test(lexer_variable, "caJas = 5")
-
-def test_lexer_variable_posicion_unicaracter():
-    make_position_test(lexer_variable, "c = 5")
-  
-def test_lexer_variable_position_none():  # Prueba posicion 0 para variables con salida None
-    make_position_test(lexer_variable, "_")
-    
-def test_lexer_variable_position_no_digito():  
-    make_position_test(lexer_variable, "125caJas = 5")
-
-def test_lexer_variable_posicion_no_otrosvalores():  
-    make_position_test(lexer_variable, "=$125caJas = 5")
-
-def test_lexer_variable_posicion_True():  
-    make_position_test(lexer_variable, "True")
-    
-def test_lexer_variable_posicion_False():
-    make_position_test(lexer_variable, "False")
-    
-def test_lexer_variable_posicion_vacio():
-    make_position_test(lexer_variable, "")
-
-
+@pytest.mark.parametrize(
+    "stream",
+    ["_", "125caJas = 5", "=$125caJas = 5", "True", "False", ""]
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_variable_negative_posicion(stream: str):
+    make_negative_position_test(lexer_variable, stream)
 
 
 """ ***************** Test de Int  ******************** """
 
+@pytest.mark.parametrize( # Prueba enteros positivos y negativos
+    "stream,expected",
+    [
+        ("2", Int(2)), ("-3", Int(-3)), ("5569", Int(5569)), ("-869", Int(-869))  # Prueba variables con guión
+        
+    ]
+)
+def test_int_positive(stream: str, expected: Variable):
+    make_positive_test(lexer_int, stream, expected)
 
-def test_lexer_int_digito():  # Prueba int positivo de un digito
-    make_positive_test(lexer_int, "2", Int(2))
-
-
-def test_lexer_int_negativo():  # Prueba int negativo con un dígito
-    make_positive_test(lexer_int, "-3", Int(-3))
-
-
-def test_lexer_int_digitos():  # Prueba int positivo de más de una cadena
-    make_positive_test(lexer_int, "5569", Int(5569))
-
-
-def test_lexer_int_negativos():  # Prueba int negativo de más de una cadena
-    make_positive_test(lexer_int, "-869", Int(-869))
-
-
-def test_lexer_int_otrosvalores1():  # Prueba int con cadenas de letras
-    make_negative_test(lexer_int, "xtrs=56")
-
-
-def test_lexer_int_otrosvalores2():  # Prueba int con símbolos de operador
-    make_negative_test(lexer_int, "+xtrs=56")
+@pytest.mark.parametrize( # Prueba cadenas con salida None
+    "stream",
+    [  
+        "xtrs=56", "+xtrs=56", "", "_", "_4556", "$#"
+    ]
+)
+def test_int_negative(stream: str):
+    make_negative_test(lexer_int, stream)
 
 
-def test_lexer_int_vacio():  # Prueba int en cadena vacía
-    make_negative_test(lexer_int, "")
+@pytest.mark.parametrize(
+    "stream", ["5", "589", "-8546s"]
+)  # Prueba posicion para cadenas con salida Variable
+def test_lexer_int_positive_posicion(stream: str):
+    lenght = len(str(lexer_int(Stream(stream)).value))
+    make_positive_position_test(lexer_int, stream, lenght)
 
 
+@pytest.mark.parametrize(
+    "stream",
+    ["_", "caJas", "=$125caJas = 5", "True", "False"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_int_negative_posicion(stream: str):
+    make_negative_position_test(lexer_int, stream)
+    
 
 
 """ ***************** Test de Operador  ******************** """
+
+@pytest.mark.parametrize( # Prueba enteros positivos y negativos
+    "stream,expected",
+    [
+        ("2", Int(2)), ("-3", Int(-3)), ("5569", Int(5569)), ("-869", Int(-869))  # Prueba variables con guión
+        
+    ]
+)
+def test_int_positive(stream: str, expected: Variable):
+    make_positive_test(lexer_int, stream, expected)
+
+@pytest.mark.parametrize( # Prueba cadenas con salida None
+    "stream",
+    [  
+        "xtrs=56", "+xtrs=56", "", "_", "_4556", "$#"
+    ]
+)
+def test_int_negative(stream: str):
+    make_negative_test(lexer_int, stream)
+
+
+@pytest.mark.parametrize(
+    "stream", ["5", "589", "-8546s"]
+)  # Prueba posicion para cadenas con salida Variable
+def test_lexer_int_positive_posicion(stream: str):
+    lenght = len(str(lexer_int(Stream(stream)).value))
+    make_positive_position_test(lexer_int, stream, lenght)
+
+
+@pytest.mark.parametrize(
+    "stream",
+    ["_", "caJas", "=$125caJas = 5", "True", "False"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_int_negative_posicion(stream: str):
+    make_negative_position_test(lexer_int, stream)
+
 
 
 def test_lexer_operador_vacio():
@@ -175,8 +203,6 @@ def test_lexer_operador_otrosvalores():
 
 def test_lexer_operador_igual():
     make_negative_test(lexer_operator, "= ")
-
-
 
 
 """ ***************** Test de Bool  ******************** """

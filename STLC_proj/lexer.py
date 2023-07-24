@@ -213,7 +213,7 @@ print("Prueba lexer_variable: ")
 def lexer_int(stream: Stream) -> Optional[Int]:
     acc: list[str] = []
     orig_post = stream.get_posicion()
-    num = stream.get_char()
+    num = stream.get_char()    
     if num is None:
         stream.colcar_posicion(orig_post)
         return None
@@ -242,7 +242,6 @@ def lexer_int(stream: Stream) -> Optional[Int]:
                 num = stream.get_char()
                 if num is None:
                     break
-            stream.colcar_posicion(orig_post)
         else:
             stream.colcar_posicion(orig_post)
             return None
@@ -359,4 +358,32 @@ def lexer_bool(stream: Stream) -> Optional[Bool]:
 
 
 def lexer_unit(stream: Stream) -> Optional[UnitExp]:
-    pass
+    acc: list[str] = []
+    orig_post = stream.get_posicion()
+    char = stream.get_char()
+    if char is None:
+        return None
+    else:
+        if (char == "u") or (char == "U"):
+            acc.append(char)
+            stream.consume()
+            char = stream.get_char()
+            if char is None:
+                stream.colcar_posicion(orig_post)
+                return None
+            while char >= "a" and char <= "z":
+                acc.append(char)
+                stream.consume()
+                char = stream.get_char()
+                if char is None:
+                    break
+            final_str = "".join(acc)
+
+            if (
+                final_str == "unit"
+            ) or final_str == "Unit":  # identifica que la cadena corresponda a la expresion unit
+                return UnitExp()
+            
+            return None
+        else:
+            return None
