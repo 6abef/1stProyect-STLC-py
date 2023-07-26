@@ -11,6 +11,8 @@ expression : variable
 
 literal : bool_literal | int_literal | "unit"
 
+(YA)unitExp = "unit"
+
 (YA)bool_literal : True | False
 
 (YA) int_literal : 0 | 1 | -1 | 2 | -2 | ...         
@@ -29,7 +31,14 @@ lexers necesarios:
 - entero   ............... (YA)
 - operador ............... (YA)
 - bool     ............... (YA)
-- unit
-- literal
-- if..then
-- 
+- unit     ............... (YA)
+- parentesis izq/der ..... (YA)
+- flecha   ............... (YA)
+- lambda   ............... (YA)
+- two points ............. (YA)
+- if..then   ............. (YA)
+- equals     ............. (YA)
+
+
+
+- literal 
