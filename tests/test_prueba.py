@@ -1,33 +1,55 @@
+from typing import Optional, TypeVar, Callable
+
 from STLC_proj.lexer import (
     lexer_int,
     lexer_variable,
     lexer_operator,
     lexer_bool,
     lexer_unit,
-    id_lexer,
+    lexer_identifier,
     reader_lexer,
+    lexer_leftP,
+    lexer_rightP,
+    lexer_arrowR,
+    lexer_lineLambda,
+    lexer_if,
+    lexer_then,
+    lexer_int_type,
+    lexer_bool_type,
+    lexer_unit_type,
     Stream,
     Variable,
     Int,
     Operator,
     Bool,
     UnitExp,
+    LeftP,
+    RightP,
+    ArrowR,
+    LineLambda,
+    If,
+    Then,
+    IntType,
+    BoolType,
+    UnitType,
 )
 
 import pytest  # buscar cómo arreglar este error en editor
 
+T = TypeVar("T")
+
 
 def make_positive_test(
-    lexer, string: str, value
+    lexer: Callable[[Stream], Optional[T]], string: str, value: T
 ):  # Refactoriza los test predefinidos
     result = lexer(Stream(string))
-    print(result)
-    print(value)
+    # print(result)
+    # print(value)
     assert result == value
 
 
 def make_negative_test(
-    lexer, string: str
+    lexer: Callable[[Stream], Optional[T]], string: str
 ):  # Refactoriza los test predefinidos a Fallo
     result = lexer(Stream(string))
     # print(result)
@@ -36,7 +58,9 @@ def make_negative_test(
 
 
 def make_positive_position_test(
-    lexer, string: str, final_position
+    lexer: Callable[[Stream], Optional[T]],
+    string: str,
+    final_position: Optional[int],
 ):  # Refactoriza los test predefinidos para la posición
     s = Stream(string)
     lex_var = lexer(s)
@@ -46,7 +70,7 @@ def make_positive_position_test(
 
 
 def make_negative_position_test(
-    lexer, string: str
+    lexer: Callable[[Stream], Optional[T]], string: str
 ):  # Refactoriza los test predefinidos para la posición
     s = Stream(string)
     lex_var = lexer(s)
@@ -54,19 +78,19 @@ def make_negative_position_test(
 
 
 def make_positive_id_test(
-    string: str, stream: str, value
+    stream: str, symbol: str, value: str
 ):  # Refactoriza los test predefinidos para la identificación de cadenas
-    found_lexer = id_lexer(string)
+    found_lexer = lexer_identifier(symbol)
     result = found_lexer(Stream(stream))
-    #print(found_lexer)
-    #print(result)
+    # print(found_lexer)
+    # print(result)
     assert result == value
 
 
 def make_negative_id_test(
-    string: str, stream:str
+    stream: str, symbol: str
 ):  # Refactoriza los test predefinidos para la identificación de cadenas
-    found_lexer = id_lexer(string)
+    found_lexer = lexer_identifier(symbol)
     result = found_lexer(Stream(stream))
     assert result is None
 
@@ -103,10 +127,10 @@ def test_variable_negative(stream: str):
 
 
 @pytest.mark.parametrize(
-    "stream", ["_cajas = 5", "cajas = 5", "caJas = 5", "c = 5"]
+    "stream", ["_cajas", "cajas", "caJas", "c"]
 )  # Prueba posicion para cadenas con salida Variable
 def test_lexer_variable_positive_posicion(stream: str):
-    lenght = len(lexer_variable(Stream(stream)).name)
+    lenght = len(stream)
     make_positive_position_test(lexer_variable, stream, lenght)
 
 
@@ -129,7 +153,7 @@ def test_lexer_variable_negative_posicion(stream: str):
         ("-869", Int(-869)),  # Prueba variables con guión
     ],
 )
-def test_lexer_int_positive(stream: str, expected: Variable):
+def test_lexer_int_positive(stream: str, expected: Int):
     make_positive_test(lexer_int, stream, expected)
 
 
@@ -141,10 +165,10 @@ def test_lexer_int_negative(stream: str):
 
 
 @pytest.mark.parametrize(
-    "stream", ["5", "589", "-8546s"]
+    "stream", ["5", "589", "-8546"]
 )  # Prueba posicion para cadenas con salida Variable
 def test_lexer_int_positive_posicion(stream: str):
-    lenght = len(str(lexer_int(Stream(stream)).value))
+    lenght = len(stream)
     make_positive_position_test(lexer_int, stream, lenght)
 
 
@@ -156,135 +180,381 @@ def test_lexer_int_negative_posicion(stream: str):
     make_negative_position_test(lexer_int, stream)
 
 
-""" ***************** Test de Operador  ******************** """
-"""
+""" ***************** Test de Identificador de cadenas  ******************** """
 
-@pytest.mark.parametrize(  # Prueba operadores predefinidos
+
+@pytest.mark.parametrize(
     "stream,expected",
     [
-        ("+", Operator("+")),
-        ("- ", Operator("- ")),
-        ("*", Operator("*")),
-        ("/", Operator("/")),
-        ("<", Operator("<")),
-        (">", Operator(">")),
-        ("<=", Operator("<=")),
-        (">=", Operator(">=")),
-        ("==", Operator("==")),
-        ("&", Operator("&")),
-        ("|", Operator("|")),
-        ("~", Operator("~")), 
-        ("- 589", Operator("- ")),
+        ("+", "+"),  # Prueba operadores predefinidos
+        ("- ", "- "),
+        ("*", "*"),
+        ("/", "/"),
+        ("<", "<"),
+        (">", ">"),
+        ("<=", "<="),
+        (">=", ">="),
+        ("==", "=="),
+        ("&", "&"),
+        ("|", "|"),
+        ("~", "~"),
+        ("<=", "<"),  # Revisión de cadena operador incompleta
+        (">=", ">"),
+        ("- 589", "- "),
+        ("True45", "True"),  # Prueba booleanos
+        ("False45", "False"),
+        ("unity", "unity"),  # Prueba unity
+        ("if", "if"),  # Prueba if...then
+        ("then", "then"),
+        ("(if", "("),  # Prueba paréntesis
+        (")then", ")"),
+        ("->", "->"),  # Prueba arrow
+        ("/", "/"),  # Prueba lineLambda
+        ("=", "="),  # Prueba equals
+        ("Int('485')", "Int"),  # Prueba tipos
+        ("Bool(False)", "Bool"),
+        ("Unit(", "Unit"),
     ],
 )
-def test_lexer_operator_positive(stream: str, expected: Variable):
+def test_identifier_function_positive(stream: str, expected: str):
+    make_positive_id_test(stream, expected, expected)
+
+
+@pytest.mark.parametrize(
+    "stream,symbol",
+    [
+        (" ", "+"),  # Prueba salida None
+        ("-1 ", "- "),
+        ("&", "*"),
+        ("unit", "unity"),
+    ],
+)
+def test_identifier_function_negative(stream: str, symbol: str):
+    make_negative_id_test(stream, symbol)
+
+
+""" ***************** Test de Operador  ******************** """
+
+
+@pytest.mark.parametrize(
+    "stream, expected",
+    [
+        ("<=", Operator("<=")),
+        (">=", Operator(">=")),
+    ],  # Verificación de operadores
+)
+def test_lexer_operator_positive(stream: str, expected: Operator):
     make_positive_test(lexer_operator, stream, expected)
 
 
-@pytest.mark.parametrize(  # Prueba cadenas con salida None
-    "stream", ["", "-1", "", "_", "asde + 5", "$#", "= "]
+@pytest.mark.parametrize(
+    "stream",
+    ["-584", "="],  # verificación de no operadores
 )
 def test_lexer_operator_negative(stream: str):
     make_negative_test(lexer_operator, stream)
 
 
 @pytest.mark.parametrize(
-    "stream",
-    ["+", "- ", "*", "/", "<", ">", "<=", ">=", "==", "&", "|", "~", "- 8546s"],
-)  # Prueba posicion para cadenas con salida Operador
+    "stream", ["+", "- ", "*", "/", "<", ">", "<=", ">=", "==", "&", "|", "~"]
+)  # Prueba posicion para cadenas con salida operador
 def test_lexer_operator_positive_posicion(stream: str):
-    lenght = len(str(lexer_operator(Stream(stream)).name))
+    lenght = len(stream)
     make_positive_position_test(lexer_operator, stream, lenght)
 
 
 @pytest.mark.parametrize(
     "stream",
-    ["", "_", "caJas", "=$125caJas = 5", "True", "False", "-8546s"],
+    ["_", "caJas", "$125caJas = 5", "True", "False"],
 )  # Prueba posicion 0 para cadenas con salida None
 def test_lexer_operator_negative_posicion(stream: str):
     make_negative_position_test(lexer_operator, stream)
-"""
-
-""" *****************Test identificador de cadenas ***************************** """
 
 
-"""@pytest.mark.parametrize(  # Prueba operadores aislados
-    "stream,expected",
-    [
-        ("+", Operator("+")),
-        ("- ", Operator("- ")),
-        ("*", Operator("*")),
-        ("/", Operator("/")),
-        ("<", Operator("<")),
-        (">", Operator(">")),
-        ("<=", Operator("<=")),
-        (">=", Operator(">=")),
-        ("==", Operator("==")),
-        ("&", Operator("&")),
-        ("|", Operator("|")),
-        ("~", Operator("~")),  # Prueba operadores aislados
-        ("- 589", Operator("- ")),
-    ],
+""" ***************** Test de Bool  ******************** """
+
+
+@pytest.mark.parametrize(
+    "stream, expected",
+    [("True", Bool(True)), ("False", Bool(False))],  # Verificación de valores
 )
-def test_lexer_operator_positive(stream: str, expected: Variable):
-    make_positive_id_test(lexer_operator,stream, expected)"""
+def test_lexer_bool_positive(stream: str, expected: Bool):
+    make_positive_test(lexer_bool, stream, expected)
 
 
-@pytest.mark.parametrize(  # Prueba identificación de bool
-    "stream,symbol,expected",
-    [
-        ("True", "True", "True"),
-        ("False ", "False", "False"),
-        ("True45s45a", "True", "True"),
-        ("False+-g ", "False", "False"),
-    ],
+@pytest.mark.parametrize(
+    "stream",
+    ["true", "false"],  # verificación de no operadores
 )
-def test_lexer_bool_positive(stream: str, symbol: str, expected: str):
-    make_positive_id_test(symbol, stream, expected)
+def test_lexer_bool_negative(stream: str):
+    make_negative_test(lexer_bool, stream)
 
-@pytest.mark.parametrize(  # Prueba identificación de bool con salida None
-    "stream,symbol",
-    [
-        ("False ", "True"),
-        ("True ", "False"),
-        ("Tre45s45a", "True"),
-        (" False+-g ", "False"),
-        (" ", "False"),
-        ("58False", "False"),
-    ],
+
+@pytest.mark.parametrize(
+    "stream", ["True", "False"]
+)  # Prueba posicion para cadenas con salida bool
+def test_lexer_bool_positive_posicion(stream: str):
+    lenght = len(stream)
+    make_positive_position_test(lexer_bool, stream, lenght)
+
+
+@pytest.mark.parametrize(
+    "stream",
+    ["_", "caJas", "$125caJas = 5", "+548", "-59"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_bool_negative_posicion(stream: str):
+    make_negative_position_test(lexer_bool, stream)
+
+
+""" ***************** Test de unit ******************** """
+
+
+@pytest.mark.parametrize(
+    "stream, expected",
+    [("unit", UnitExp())],  # Verificación
 )
-def test_lexer_bool_negative(stream: str, symbol: str):
-    make_negative_id_test(symbol, stream)
-
-""" ***************** Test de Bool, Unit, Parentesis, puntos, flecha, if..then   ******************** """
-"""
-
-def test_lexer_bool_True():
-    make_positive_test(lexer_bool, "True", Bool(True))
+def test_lexer_unit_positive(stream: str, expected: UnitExp):
+    make_positive_test(lexer_unit, stream, expected)
 
 
-def test_lexer_bool_False():
-    make_positive_test(lexer_bool, "False", Bool(False))
+@pytest.mark.parametrize(
+    "stream", ["unit"]
+)  # Prueba posicion para cadenas con salida unit
+def test_lexer_unit_positive_posicion(stream: str):
+    lenght = len(stream)
+    make_positive_position_test(lexer_unit, stream, lenght)
 
 
-def test_lexer_bool_variable():
-    make_negative_test(lexer_bool, "number")
+@pytest.mark.parametrize(
+    "stream",
+    ["_", "Unit", "$125caJas = 5", "+548", "-59"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_unit_negative_posicion(stream: str):
+    make_negative_position_test(lexer_unit, stream)
 
 
-def test_lexer_bool_variable2():
-    make_negative_test(lexer_bool, "_number")
+""" ***************** Test de parentesis ******************** """
 
 
-def test_lexer_bool_digit():
-    make_negative_test(lexer_bool, "2545")
+@pytest.mark.parametrize(
+    "lexer,stream, expected",
+    [
+        (lexer_leftP, "(", LeftP()),
+        (lexer_rightP, ")", RightP()),
+    ],  # Verificación
+)
+def test_lexer_parenthesis_positive(
+    lexer: Callable[[Stream], Optional[T]], stream: str, expected: T
+):
+    make_positive_test(lexer, stream, expected)
 
 
-def test_lexer_bool_parentesis():
-    make_negative_test(lexer_bool, "(True)")
+@pytest.mark.parametrize(
+    "lexer,stream",
+    [(lexer_leftP, "("), (lexer_rightP, ")")],  # Verificación
+)  # Prueba posicion para cadenas con salida parentesis
+def test_lexer_parenthesis_positive_posicion(
+    lexer: Callable[[Stream], Optional[T]], stream: str
+):
+    lenght = len(stream)
+    make_positive_position_test(lexer, stream, lenght)
 
 
-def test_lexer_bool_otros_simbolos():
-    make_negative_test(lexer_bool, "#$(True)")
-"""
+@pytest.mark.parametrize(
+    "stream",
+    ["_", "Unit", "$125caJas = 5", "+548", "-59"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_leftP_negative_posicion(stream: str):
+    make_negative_position_test(lexer_leftP, stream)
 
-# Faltan test de posición al fallo NO VARIABLE
+
+@pytest.mark.parametrize(
+    "stream",
+    ["_", "Unit", "$125caJas = 5", "+548", "-59"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_rightP_negative_posicion(stream: str):
+    make_negative_position_test(lexer_rightP, stream)
+
+
+""" ***************** Test de arrow******************** """
+
+def test_lexer_arrowR_positive():
+    make_positive_test(lexer_arrowR, "->", ArrowR())  # verificación
+
+
+def test_lexer_arrowR_positive_posicion():
+    make_positive_position_test(
+        lexer_arrowR, "->", len("->")
+    )  # Avance de posición
+
+
+@pytest.mark.parametrize(
+    "stream",
+    ["_", "Unit", "$125caJas = 5", "+548", "-59"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_arrowR_negative_posicion(stream: str):
+    make_negative_position_test(lexer_arrowR, stream)
+    
+    
+""" ***************** Test de lineLambda******************** """
+
+def test_lexer_lineLambda_positive():
+    make_positive_test(lexer_lineLambda, "/", LineLambda())  # verificación
+
+
+def test_lexer_lineLambda_positive_posicion():
+    make_positive_position_test(
+        lexer_lineLambda, "/", len("/")
+    )  # Avance de posición
+
+
+@pytest.mark.parametrize(
+    "stream",
+    ["_", "Unit", "$125caJas = 5", "+548", "-59"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_lineLambda_negative_posicion(stream: str):
+    make_negative_position_test(lexer_lineLambda, stream)
+
+
+
+""" ***************** Test de if..then ******************** """
+
+@pytest.mark.parametrize(
+    "lexer,stream, expected",
+    [
+        (lexer_if, "if", If()),
+        (lexer_then, "then", Then()),
+    ],  # Verificación
+)
+def test_lexer_if_then_positive(
+    lexer: Callable[[Stream], Optional[T]], stream: str, expected: T
+):
+    make_positive_test(lexer, stream, expected)
+
+
+@pytest.mark.parametrize(
+    "lexer,stream",
+    [(lexer_if, "if"), (lexer_then, "then"),]
+)  # Prueba posicion para cadenas con salida parentesis
+def test_lexer_if_then_positive_posicion(
+    lexer: Callable[[Stream], Optional[T]], stream: str
+):
+    lenght = len(stream)
+    make_positive_position_test(lexer, stream, lenght)
+
+
+@pytest.mark.parametrize(
+    "stream",
+    ["_", "Unit", "$125caJas = 5", "+548", "-59"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_if_negative_posicion(stream: str):
+    make_negative_position_test(lexer_if, stream)
+
+
+@pytest.mark.parametrize(
+    "stream",
+    ["_", "Unit", "$125caJas = 5", "+548", "-59"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_then_negative_posicion(stream: str):
+    make_negative_position_test(lexer_then, stream)
+    
+    
+""" ***************** Test de tipos ******************** """
+
+@pytest.mark.parametrize(
+    "lexer,stream, expected",
+    [
+        (lexer_int_type, "Int", IntType()),
+        (lexer_bool_type, "Bool", BoolType()),
+        (lexer_unit_type, "Unit", UnitType())
+    ],  # Verificación
+)
+def test_lexer_type_positive(
+    lexer: Callable[[Stream], Optional[T]], stream: str, expected: T
+):
+    make_positive_test(lexer, stream, expected)
+
+
+@pytest.mark.parametrize(
+    "lexer,stream",
+    [(lexer_int_type, "Int"), (lexer_bool_type, "Bool"), (lexer_unit_type, "Unit")]
+)  # Prueba posicion para cadenas con salida parentesis
+def test_lexer_type_positive_posicion(
+    lexer: Callable[[Stream], Optional[T]], stream: str
+):
+    lenght = len(stream)
+    make_positive_position_test(lexer, stream, lenght)
+
+
+@pytest.mark.parametrize(
+    "stream",
+    ["int", "unit","bool" "$125caJas = 5", "+548", "-59", "()"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_intType_posicion(stream: str):
+    make_negative_position_test(lexer_int_type, stream)
+
+
+@pytest.mark.parametrize(
+    "stream",
+    ["int", "unit","bool" "$125caJas = 5", "+548", "-59", "()"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_unitType_posicion(stream: str):
+    make_negative_position_test(lexer_unit_type, stream)
+
+
+@pytest.mark.parametrize(
+    "stream",
+    ["int", "unit","bool" "$125caJas = 5", "+548", "-59", "()"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_boolType_posicion(stream: str):
+    make_negative_position_test(lexer_bool_type, stream)
+    
+    
+""" ***************** Test de literal******************** """
+@pytest.mark.parametrize(
+    "lexer, stream, expected",
+    [
+        (lexer_int_type, "Int", IntType()),
+        (lexer_bool_type, "Bool", BoolType()),
+        (lexer_unit_type ,"Unit", UnitType())
+    ],  # Verificación
+)
+def test_lexer_literal_positive(
+    lexer: Callable[[Stream], Optional[T]], stream: str, expected: T
+):
+    make_positive_test(lexer, stream, expected)
+
+
+@pytest.mark.parametrize(
+    "lexer,stream",
+    [(lexer_int_type, "Int"), (lexer_bool_type, "Bool"), (lexer_unit_type, "Unit")]
+)  # Prueba posicion para cadenas con salida parentesis
+def test_lexer_literal_positive_posicion(
+    lexer: Callable[[Stream], Optional[T]], stream: str
+):
+    lenght = len(stream)
+    make_positive_position_test(lexer, stream, lenght)
+
+
+@pytest.mark.parametrize(
+    "stream",
+    ["int", "unit","bool" "$125caJas = 5", "+548", "-59", "()"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_intType_posicion(stream: str):
+    make_negative_position_test(lexer_int_type, stream)
+
+
+@pytest.mark.parametrize(
+    "stream",
+    ["int", "unit","bool" "$125caJas = 5", "+548", "-59", "()"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_unitType_posicion(stream: str):
+    make_negative_position_test(lexer_unit_type, stream)
+
+
+@pytest.mark.parametrize(
+    "stream",
+    ["int", "unit","bool" "$125caJas = 5", "+548", "-59", "()"],
+)  # Prueba posicion 0 para cadenas con salida None
+def test_lexer_boolType_posicion(stream: str):
+    make_negative_position_test(lexer_bool_type, stream)

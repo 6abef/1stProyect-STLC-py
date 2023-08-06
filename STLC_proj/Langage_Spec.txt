@@ -9,7 +9,7 @@ expression : variable
 (YA) variable_character : "a" | ... | "z" | "A" | ... | "Z"
 (YA) variable : "_" variable_character+ | variable_character+
 
-literal : bool_literal | int_literal | "unit"
+(YA) literal : bool_literal | int_literal | "unit"
 
 (YA)unitExp = "unit"
 
@@ -38,7 +38,11 @@ lexers necesarios:
 - two points ............. (YA)
 - if..then   ............. (YA)
 - equals     ............. (YA)
+- tipos      ............. (YA)
+- literal    ............. (YA)
+- ErrorToken ............. (YA)
 
 
-
-- literal 
+- expresiones (parentesis , parentesis&operador, if,then , lambda)
+- variable_declaration (con y sin parentesis)
+- variable_definition

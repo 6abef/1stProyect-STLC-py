@@ -96,6 +96,7 @@ class Twop:
 class If:
     pass
 
+
 @dataclass
 class Then:
     pass
@@ -105,6 +106,15 @@ class Then:
 class Equals:
     pass
 
+
+@dataclass
+class Literal:
+    pass
+    
+    
+@dataclass
+class TokenError:
+    error: str
 
 @dataclass
 class Stream:
@@ -132,9 +142,6 @@ class Stream:
         self.pos = new_pos
 
 
-@dataclass
-class TokenError:
-    error: str
 
 
 def is_digit(string: str) -> bool:
@@ -148,7 +155,7 @@ def is_digit(string: str) -> bool:
         return False
 
 
-def id_lexer(
+def lexer_identifier(
     string: str,
 ) -> Callable[
     [Stream], Optional[str]
@@ -172,7 +179,7 @@ def id_lexer(
 
 
 """l = Stream("True")
-lexer_l = id_lexer("True")
+lexer_l = lexer_identifier("True")
 print(l.value, lexer_l(l))"""
 
 
@@ -184,7 +191,7 @@ def reader_lexer(
 ) -> Callable[
     [Stream], Optional[T]
 ]:  # ejecutor de lexer para cadena identificada
-    lexer = id_lexer(
+    lexer = lexer_identifier(
         symbol
     )  # Cuidado: En símbolos dobles (<=), reconocerá el símbolo unitario (<)
 
@@ -363,15 +370,16 @@ def lexer_bool(
     #    #    return Bool(bool(b))
 
 
-"""l = Stream("False<= 5")
-print("Posición de origen:", l.get_posicion())
-print("Se encontró", lexer_bool(l),"en", l.value)
-print("posición final:", l.get_posicion())"""
+# l = Stream("False<= 5")
+# print("Posición de origen:", l.get_posicion())
+# print("Se encontró", lexer_bool(l),"en", l.value)
+# print("posición final:", l.get_posicion())
+# print(lexer_bool(l)==Bool(False))
 
 
-def lexer_unit(# buscador de expresiones unit
+def lexer_unit(  # buscador de expresiones unit
     stream: Stream,
-) -> Optional[UnitExp]:  
+) -> Optional[UnitExp]:
     lexer = reader_lexer("unit", UnitExp())
     return lexer(stream)
 
@@ -382,53 +390,115 @@ print("Se encontró", lexer_unit(l),"en", l.value)
 print("posición final:", l.get_posicion())"""
 
 
-def lexer_leftP(# buscador de apertura de paréntesis
+def lexer_leftP(  # buscador de apertura de paréntesis
     stream: Stream,
-) -> Optional[LeftP]:  
+) -> Optional[LeftP]:
     lexer = reader_lexer("(", LeftP())
     return lexer(stream)
 
 
-def lexer_rightP(# buscador de cierre de paréntesis
+def lexer_rightP(  # buscador de cierre de paréntesis
     stream: Stream,
-) -> Optional[RightP]:  
+) -> Optional[RightP]:
     lexer = reader_lexer(")", RightP())
     return lexer(stream)
 
 
-def lexer_arrowR(# buscador de flechas
+def lexer_arrowR(  # buscador de flechas
     stream: Stream,
-) -> Optional[ArrowR]:  
+) -> Optional[ArrowR]:
     lexer = reader_lexer("->", ArrowR())
     return lexer(stream)
 
 
-def lexer_lineLambda(# buscador de expresiones lambda
+def lexer_lineLambda(  # buscador de expresiones lambda
     stream: Stream,
-) -> Optional[LineLambda]:  
-    lexer = reader_lexer("->", LineLambda())
+) -> Optional[LineLambda]:
+    lexer = reader_lexer("/", LineLambda())
     return lexer(stream)
 
-def lexer_twop(# buscador de expresiones lambda
-    stream: Stream,
-) -> Optional[Twop]:  
-    lexer = reader_lexer("->", Twop())
-    return lexer(stream)
 
-def lexer_if(# buscador de if
+# def lexer_twop(# buscador de ????
+#     stream: Stream,
+# ) -> Optional[Twop]:
+#     lexer = reader_lexer("->", Twop())
+#     return lexer(stream)
+
+
+def lexer_if(  # buscador de if
     stream: Stream,
-) -> Optional[If]:  
+) -> Optional[If]:
     lexer = reader_lexer("if", If())
     return lexer(stream)
 
-def lexer_then(# buscador de Then
+
+def lexer_then(  # buscador de Then
     stream: Stream,
-) -> Optional[Then]:  
+) -> Optional[Then]:
     lexer = reader_lexer("then", Then())
     return lexer(stream)
 
-def lexer_equals(# buscador de =
+
+def lexer_equals(  # buscador de =
     stream: Stream,
-) -> Optional[Equals]:  
+) -> Optional[Equals]:
     lexer = reader_lexer("=", Equals())
     return lexer(stream)
+
+
+"""Lexer de tipos"""
+
+
+def lexer_int_type(stream: Stream) -> Optional[IntType]:
+    lexer = reader_lexer("Int", IntType())
+    return lexer(stream)
+
+
+def lexer_bool_type(stream: Stream) -> Optional[BoolType]:
+    lexer = reader_lexer("Bool", BoolType())
+    return lexer(stream)
+
+
+def lexer_unit_type(stream: Stream) -> Optional[UnitType]:
+    lexer = reader_lexer("Unit", UnitType())
+    return lexer(stream)
+
+def lexer_literal(stream:Stream) : #
+    original_position=stream.get_posicion()
+    token_lexer_list =[lexer_int, lexer_bool, lexer_unit]
+    for lexer in token_lexer_list:
+        value = lexer(stream)
+        if value is not None:
+            return value
+    return None
+    
+def lexer_errorToken(stream:Stream) -> Optional[TokenError]:
+    original_position = stream.get_posicion()
+    if (lexer_variable is None) and (lexer_literal is None) and (lexer_lineLambda is None) and (lexer_rightP is None) and (lexer_leftP is None) and (lexer_arrowR is None) and (lexer_if is None) and (lexer_then is None):
+        return "Error. Elemento no identificable en"+str(original_position)
+    else:
+        return None
+    
+    
+# def parser_expression(stream:Stream) :
+#     expression:list =[]
+#     while True:         
+#         Token_lexer_list=[lexer_errorToken, lexer_leftP, lexer_literal, lexer_if, lexer_variable, lexer_operator,lexer_then, lexer_literal, lexer_rightP]
+#         for token in Token_lexer_list:
+#             cursor = stream.get_posicion()
+#             value = lexer(stream)
+#             if value == TokenError:
+#                 break
+#             elif:
+#                 expression.append(lexer_leftP(stream))
+                
+        
+        
+        
+#         if cursor == len(stream.value):
+#             break
+    
+    
+    
+    
+#     return None
