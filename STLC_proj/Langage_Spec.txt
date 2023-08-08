@@ -19,7 +19,7 @@ expression : variable
 
 (YA) operator: "+" | "-" | "*" | "/" | "<" | ">" | "<=" | ">=" | "==" | "&" | "|" |"~"
 
-type : "Bool" | "Int" | "Unit" | "(" type "->" type ")"
+type : "Bool" | "Int" | "Unit" | "(" type "->" type ")" #FALTA!!
 
 variable_definition : variable "=" expression
 variable_declaration : variable ":" type

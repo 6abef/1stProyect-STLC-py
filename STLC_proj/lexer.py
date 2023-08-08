@@ -76,6 +76,9 @@ class LeftP:
 class RightP:
     pass
 
+@dataclass
+class TwoP:
+    pass
 
 @dataclass
 class ArrowR:
@@ -84,11 +87,6 @@ class ArrowR:
 
 @dataclass
 class LineLambda:
-    pass
-
-
-@dataclass
-class Twop:
     pass
 
 
@@ -110,11 +108,17 @@ class Equals:
 @dataclass
 class Literal:
     pass
-    
-    
+
+
+@dataclass
+class Space:
+    pass
+
+
 @dataclass
 class TokenError:
     error: str
+
 
 @dataclass
 class Stream:
@@ -140,8 +144,6 @@ class Stream:
 
     def colcar_posicion(self, new_pos):
         self.pos = new_pos
-
-
 
 
 def is_digit(string: str) -> bool:
@@ -447,8 +449,6 @@ def lexer_equals(  # buscador de =
 
 
 """Lexer de tipos"""
-
-
 def lexer_int_type(stream: Stream) -> Optional[IntType]:
     lexer = reader_lexer("Int", IntType())
     return lexer(stream)
@@ -463,42 +463,77 @@ def lexer_unit_type(stream: Stream) -> Optional[UnitType]:
     lexer = reader_lexer("Unit", UnitType())
     return lexer(stream)
 
-def lexer_literal(stream:Stream) : #
-    original_position=stream.get_posicion()
-    token_lexer_list =[lexer_int, lexer_bool, lexer_unit]
+def lexer_twoP(stream: Stream) -> Optional[UnitType]:
+    lexer = reader_lexer(":", TwoP())
+    return lexer(stream)
+
+def lexer_space(stream: Stream) -> Optional[bool]:
+    lexer = reader_lexer(" ", True)
+    return lexer(stream)
+
+def lexer_spaces(stream: Stream) -> None:
+    while True:
+        space = lexer_space(stream)
+        if space is None:
+            break
+
+# stream = Stream('   -15')
+# lexer_spaces(stream)
+# print(var.get_char())
+
+
+def lexer_literal(stream: Stream):  #
+    original_position = stream.get_posicion()
+    token_lexer_list = [lexer_int, lexer_bool, lexer_unit]
     for lexer in token_lexer_list:
         value = lexer(stream)
         if value is not None:
             return value
     return None
-    
-def lexer_errorToken(stream:Stream) -> Optional[TokenError]:
+
+
+def lexer_token(stream: Stream) -> Optional[Token]:
+    lexer_list: Callable[[Stream], Optional[T]] = [
+        lexer_leftP,
+        lexer_int_type,
+        lexer_bool_type,
+        lexer_unit_type,
+        lexer_lineLambda,
+        lexer_literal,
+        lexer_if,
+        lexer_variable,
+        lexer_operator,
+        lexer_twoP,
+        lexer_arrowR,
+        lexer_then,
+        lexer_equals,
+        lexer_literal,
+        lexer_rightP,
+    ]
+    lexer_spaces(stream)
     original_position = stream.get_posicion()
-    if (lexer_variable is None) and (lexer_literal is None) and (lexer_lineLambda is None) and (lexer_rightP is None) and (lexer_leftP is None) and (lexer_arrowR is None) and (lexer_if is None) and (lexer_then is None):
-        return "Error. Elemento no identificable en"+str(original_position)
-    else:
+    if stream.get_char() is None:
         return None
-    
-    
-# def parser_expression(stream:Stream) :
-#     expression:list =[]
-#     while True:         
-#         Token_lexer_list=[lexer_errorToken, lexer_leftP, lexer_literal, lexer_if, lexer_variable, lexer_operator,lexer_then, lexer_literal, lexer_rightP]
-#         for token in Token_lexer_list:
-#             cursor = stream.get_posicion()
-#             value = lexer(stream)
-#             if value == TokenError:
-#                 break
-#             elif:
-#                 expression.append(lexer_leftP(stream))
-                
+    for lexer_function in lexer_list:
+        value = lexer_function(stream)
+        if value is not None:
+            return value
+    return TokenError(original_position)
+
+# stream = Stream('   -15')
+# print(lexer_token(stream))
+
+def lexer(stream:Stream) -> list[Token]:
+    tokens_list=[]
+    last_token=None
+    while True:
+        token = lexer_token(stream)
+        if token is None: 
+            return tokens_list
+        elif isinstance(token,TokenError):
+            tokens_list.append(token)
+            return tokens_list
+        tokens_list.append(token)
         
-        
-        
-#         if cursor == len(stream.value):
-#             break
-    
-    
-    
-    
-#     return None
+# stream = Stream('( True -> False)')
+# print(lexer(stream))
