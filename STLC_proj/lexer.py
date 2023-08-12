@@ -21,7 +21,7 @@ Token = Union[
     "TokenError",
     "ArrowR",
     "LineLambda",
-    "Twop",
+    "TwoP",
     "UnitType",
     "UnitExp",
 ]
@@ -97,6 +97,10 @@ class If:
 
 @dataclass
 class Then:
+    pass
+
+@dataclass
+class Else:
     pass
 
 
@@ -440,6 +444,11 @@ def lexer_then(  # buscador de Then
     lexer = reader_lexer("then", Then())
     return lexer(stream)
 
+def lexer_else(  # buscador de Then
+    stream: Stream,
+) -> Optional[Then]:
+    lexer = reader_lexer("else", Then())
+    return lexer(stream)
 
 def lexer_equals(  # buscador de =
     stream: Stream,
@@ -482,7 +491,7 @@ def lexer_spaces(stream: Stream) -> None:
 # print(var.get_char())
 
 
-def lexer_literal(stream: Stream):  #
+def lexer_literal(stream: Stream)->Optional[Literal]:  #
     original_position = stream.get_posicion()
     token_lexer_list = [lexer_int, lexer_bool, lexer_unit]
     for lexer in token_lexer_list:
@@ -506,6 +515,7 @@ def lexer_token(stream: Stream) -> Optional[Token]:
         lexer_twoP,
         lexer_arrowR,
         lexer_then,
+        lexer_else,
         lexer_equals,
         lexer_literal,
         lexer_rightP,

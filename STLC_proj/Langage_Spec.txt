@@ -1,7 +1,7 @@
-expression : variable
-    | literal 
+expression : variable                                  ... (YA)
+    | literal                                          ... (YA)
     | "(" expression expression ")"
-    |"\" variable "->"  expression
+    |"\" variable "->"  expression                     ... (YA)
     | "(" expression operator expression ")"
     | "if" expression "then" expression "else" expression
     | "(" expression ":" type ")"
@@ -42,7 +42,18 @@ lexers necesarios:
 - literal    ............. (YA)
 - ErrorToken ............. (YA)
 
+Parser: 
 
 - expresiones (parentesis , parentesis&operador, if,then , lambda)
 - variable_declaration (con y sin parentesis)
 - variable_definition
+
+ExpressionVariable
+ExpressionLiteral
+ExpressionApplication
+ExpressionLambda
+ExpressionOperator
+ExpressionOperation
+ExpressionIf
+ExpressionType
+ExpressionDeclaration

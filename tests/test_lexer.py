@@ -1,3 +1,6 @@
+"""
+Este archivo presenta las pruebas en pytest para los lexers del proyecto    
+"""
 from typing import Optional, TypeVar, Callable
 
 from STLC_proj.Lexer import (
@@ -7,7 +10,6 @@ from STLC_proj.Lexer import (
     lexer_bool,
     lexer_unit,
     lexer_identifier,
-    reader_lexer,
     lexer_leftP,
     lexer_rightP,
     lexer_arrowR,
@@ -17,7 +19,6 @@ from STLC_proj.Lexer import (
     lexer_int_type,
     lexer_bool_type,
     lexer_unit_type,
-    lexer_token,
     lexer,
     Stream,
     Variable,
