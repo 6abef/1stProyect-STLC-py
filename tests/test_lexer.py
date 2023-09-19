@@ -36,7 +36,8 @@ from STLC_proj.Lexer import (
     BoolType,
     UnitType,
     Equals,
-    TwoP
+    TwoP,
+    Token
 )
 
 import pytest  # buscar cómo arreglar este error en editor
@@ -506,7 +507,7 @@ def test_lexer_type_positive_posicion(
     "stream",
     ["int", "unit", "bool" "$125caJas = 5", "+548", "-59", "()"],
 )  # Prueba posicion 0 para cadenas con salida None
-def test_lexer_intType_posicion(stream: str):
+def test_lexer_int_Type_posicion(stream: str):
     make_negative_position_test(lexer_int_type, stream)
 
 
@@ -514,7 +515,7 @@ def test_lexer_intType_posicion(stream: str):
     "stream",
     ["int", "unit", "bool" "$125caJas = 5", "+548", "-59", "()"],
 )  # Prueba posicion 0 para cadenas con salida None
-def test_lexer_unitType_posicion(stream: str):
+def test_lexer_unit_Type_posicion(stream: str):
     make_negative_position_test(lexer_unit_type, stream)
 
 
@@ -522,7 +523,7 @@ def test_lexer_unitType_posicion(stream: str):
     "stream",
     ["int", "unit", "bool" "$125caJas = 5", "+548", "-59", "()"],
 )  # Prueba posicion 0 para cadenas con salida None
-def test_lexer_boolType_posicion(stream: str):
+def test_lexer_bool_Type_posicion(stream: str):
     make_negative_position_test(lexer_bool_type, stream)
 
 
@@ -600,7 +601,7 @@ def test_lexer_boolType_posicion(stream: str):
         ("/x = 5 ", [LineLambda(),Variable('x'), Equals(),Int(5)])        
     ],  # Verificación
 )
-def test_lexer_token_positive(stream: str, expected: T):
+def test_lexer_token_positive(stream: str, expected: list[Token]):
     make_positive_test(lexer, stream, expected)
 
 

@@ -7,6 +7,7 @@ Definición de clases
 """
 from dataclasses import dataclass
 from typing import Union, Optional, TypeVar, Callable
+from collections.abc import Sequence
 
 
 Token = Union[
@@ -24,6 +25,11 @@ Token = Union[
     "TwoP",
     "UnitType",
     "UnitExp",
+    "If",
+    "Then",
+    "Else",
+    "Equals",
+    "Space"
 ]
 
 
@@ -146,7 +152,7 @@ class Stream:
     def get_posicion(self):
         return self.pos
 
-    def colcar_posicion(self, new_pos):
+    def colocar_posicion(self, new_pos):
         self.pos = new_pos
 
 
@@ -207,7 +213,7 @@ def reader_lexer(
         if evaluation is None:
             return None
         else:
-            stream.colcar_posicion(
+            stream.colocar_posicion(
                 stream.get_posicion() + len(symbol)
             )  # cambia la posición una vez que se identifica un tipo
             # print("\tSe envía: ", varType)
@@ -248,7 +254,7 @@ def lexer_variable(
                     acc[0] >= "A" and acc[0] <= "Z"
                 ):
                     return Variable(acc[0])
-                stream.colcar_posicion(orig_post)
+                stream.colocar_posicion(orig_post)
                 return None
             while (char >= "a" and char <= "z") or (
                 char >= "A" and char <= "Z"
@@ -263,10 +269,10 @@ def lexer_variable(
             if final_str == "_":
                 return None
             elif final_str == "True":
-                stream.colcar_posicion(orig_post)
+                stream.colocar_posicion(orig_post)
                 return None
             elif final_str == "False":
-                stream.colcar_posicion(orig_post)
+                stream.colocar_posicion(orig_post)
                 return None
             return Variable("".join(acc))
         else:
@@ -278,7 +284,7 @@ def lexer_int(stream: Stream) -> Optional[Int]:  # buscador de enteros
     orig_post = stream.get_posicion()
     num = stream.get_char()
     if num is None:
-        stream.colcar_posicion(orig_post)
+        stream.colocar_posicion(orig_post)
         return None
     else:
         if num == "-":
@@ -286,7 +292,7 @@ def lexer_int(stream: Stream) -> Optional[Int]:  # buscador de enteros
             stream.consume()
             num = stream.get_char()
             if num is None:
-                stream.colcar_posicion(orig_post)
+                stream.colocar_posicion(orig_post)
                 return None
             if is_digit(num):
                 while is_digit(num):
@@ -296,7 +302,7 @@ def lexer_int(stream: Stream) -> Optional[Int]:  # buscador de enteros
                     if num is None:
                         break
             else:
-                stream.colcar_posicion(orig_post)
+                stream.colocar_posicion(orig_post)
                 return None
         elif is_digit(num):
             while is_digit(num):
@@ -306,7 +312,7 @@ def lexer_int(stream: Stream) -> Optional[Int]:  # buscador de enteros
                 if num is None:
                     break
         else:
-            stream.colcar_posicion(orig_post)
+            stream.colocar_posicion(orig_post)
             return None
     return Int(int("".join(acc)))
 
@@ -339,7 +345,7 @@ def lexer_operator(
 
 
 """l = Stream("     <= 5")
-l.colcar_posicion(5)
+l.colocar_posicion(5)
 print(l.value, lexer_operator(l))
 print("posición final:", l.get_posicion())"""
 
@@ -472,7 +478,7 @@ def lexer_unit_type(stream: Stream) -> Optional[UnitType]:
     lexer = reader_lexer("Unit", UnitType())
     return lexer(stream)
 
-def lexer_twoP(stream: Stream) -> Optional[UnitType]:
+def lexer_twoP(stream: Stream) -> Optional[TwoP]:
     lexer = reader_lexer(":", TwoP())
     return lexer(stream)
 
@@ -491,7 +497,7 @@ def lexer_spaces(stream: Stream) -> None:
 # print(var.get_char())
 
 
-def lexer_literal(stream: Stream)->Optional[Literal]:  #
+def lexer_literal(stream: Stream)->Optional[Int | Bool | UnitExp]:  #Saca los tipos considerados literal
     original_position = stream.get_posicion()
     token_lexer_list = [lexer_int, lexer_bool, lexer_unit]
     for lexer in token_lexer_list:
@@ -502,7 +508,7 @@ def lexer_literal(stream: Stream)->Optional[Literal]:  #
 
 
 def lexer_token(stream: Stream) -> Optional[Token]:
-    lexer_list: Callable[[Stream], Optional[T]] = [
+    lexer_list: Sequence[Callable[[Stream], Optional[Token]]] = [
         lexer_leftP,
         lexer_int_type,
         lexer_bool_type,
@@ -534,7 +540,7 @@ def lexer_token(stream: Stream) -> Optional[Token]:
 # print(lexer_token(stream))
 
 def lexer(stream:Stream) -> list[Token]:
-    tokens_list=[]
+    tokens_list:list[Token]=[]
     last_token=None
     while True:
         token = lexer_token(stream)

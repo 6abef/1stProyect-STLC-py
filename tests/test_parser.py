@@ -5,6 +5,8 @@ from typing import Optional, TypeVar, Callable
 from STLC_proj.Parser import (
     parser_expression_variable,
     parser_expression_literal,
+    parser_expression_operator,
+    parser_expression_operation,
     ExpressionVariable,
     ExpressionLiteral,
     ExpressionApplication,
@@ -17,7 +19,14 @@ from STLC_proj.Parser import (
     TokensList,
 )
 
-from STLC_proj.Lexer import Variable, TokenError, Int, Bool, UnitExp
+from STLC_proj.Lexer import (
+    Variable, 
+    TokenError, 
+    Int, 
+    Bool, 
+    UnitExp, 
+    Operator
+)
 
 import pytest
 
@@ -28,36 +37,35 @@ def make_positive_test(
     parser: Callable[[TokensList], Optional[T]],
     tokensList: TokensList,
     expected: Expression,
-):
-    expression = parser(tokensList)
+) -> None:
+    expression = parser(tokensList)[1]
     assert expression == expected
 
 
 def make_negative_test(
     parser: Callable[[TokensList], Optional[T]], tokensList: TokensList
-):
+) -> None:
     expression = parser(tokensList)
-    assert expression == None
+    assert isinstance(expression, ExpressionError)==True
 
 
 def make_positive_position_test(
     parser: Callable[[TokensList], Optional[T]],
     tokensList: TokensList,
-    expectedposition: Int,
-):
-    expression = parser(tokensList)
-    position = tokensList.get_posicion()
-    assert position == expectedposition
+    expectedposition: int,
+) -> None:
+   position = parser(tokensList)[0]
+   assert position == expectedposition
 
 
 def make_negative_position_test(
     parser: Callable[[TokensList], Optional[T]], tokensList: TokensList
-):
+) -> None:
     original_position = tokensList.get_posicion()
-    print('\nOriginalmente en:', original_position)
+    print("\nOriginalmente en:", original_position)
     expression = parser(tokensList)
     position = tokensList.get_posicion()
-    print('\nFinalmente en:', position)
+    print("\nFinalmente en:", position)
     assert position == original_position
 
 
@@ -73,10 +81,10 @@ def make_negative_position_test(
             TokensList([Variable("hola")]),
             ExpressionVariable("hola"),
         ),  # Prueba variables y tokenError
-        (TokensList([TokenError("5")]), ExpressionError("5")),
+        # (TokensList([TokenError("5")]), ExpressionError("5")),
     ],
 )
-def test_positive_parser_variable(tokensList: TokensList, expected: Variable):
+def test_positive_parser_variable(tokensList: TokensList, expected: Expression):
     make_positive_test(parser_expression_variable, tokensList, expected)
 
 
@@ -98,7 +106,7 @@ def test_negative_parser_variable(tokensList: TokensList):
         TokensList([Variable("hola")]),
     ],
 )
-def test_positive_parser_variable(tokensList: TokensList):
+def test_positive_position_parser_variable(tokensList: TokensList):
     make_positive_position_test(parser_expression_variable, tokensList, 1)
 
 
@@ -111,7 +119,7 @@ def test_positive_parser_variable(tokensList: TokensList):
         TokensList([TokenError("5")]),
     ],
 )
-def test_negative_parser_variable(tokensList: TokensList):
+def test_negative_position_parser_variable(tokensList: TokensList):
     make_negative_position_test(parser_expression_variable, tokensList)
 
 
@@ -119,17 +127,16 @@ def test_negative_parser_variable(tokensList: TokensList):
 ***********************************   Tests parser Literal ****************************************
 """
 
-
 @pytest.mark.parametrize(
     "tokensList, expected",
     [
         (TokensList([Int(4)]), ExpressionLiteral(Int(4))),
         (TokensList([Bool(False)]), ExpressionLiteral(Bool(False))),
         (TokensList([UnitExp()]), ExpressionLiteral(UnitExp())),
-        (TokensList([TokenError("6")]), ExpressionError("6")),
+        # (TokensList([TokenError("6")]), ExpressionError("6")),
     ],
 )
-def test_positive_parser_literal(tokensList: TokensList, expected: Variable):
+def test_positive_parser_literal(tokensList: TokensList, expected: Expression):
     make_positive_test(parser_expression_literal, tokensList, expected)
 
 
@@ -157,4 +164,32 @@ def test_positive_position_parser_literal(tokensList: TokensList):
     ],
 )
 def test_negative_position_parser_literal(tokensList: TokensList):
-    make_negative_position_test(parser_expression_variable, tokensList)
+    make_negative_position_test(parser_expression_literal, tokensList)
+
+
+"""
+***********************************   Tests parser operator/aplication ****************************************
+"""
+
+
+@pytest.mark.parametrize(
+    "tokensList, expected",
+    [
+        (TokensList([Operator('+')]), ExpressionOperator(Operator('+'))),
+        (TokensList([Operator('-')]), ExpressionOperator(Operator('-'))),
+        (TokensList([Operator('*')]), ExpressionOperator(Operator('*'))),
+        (TokensList([Operator('/')]), ExpressionOperator(Operator('/'))),
+        (TokensList([Operator('<')]), ExpressionOperator(Operator('<'))),
+        (TokensList([Operator('>')]), ExpressionOperator(Operator('>'))),
+        (TokensList([Operator('<=')]), ExpressionOperator(Operator('<='))),
+        (TokensList([Operator('>=')]), ExpressionOperator(Operator('>='))),
+        (TokensList([Operator('==')]), ExpressionOperator(Operator('=='))),        
+        (TokensList([Operator('&')]), ExpressionOperator(Operator('&'))),
+        (TokensList([Operator('|')]), ExpressionOperator(Operator('|'))),
+        (TokensList([Operator('~')]), ExpressionOperator(Operator('~'))),
+    ],
+)
+def test_positive_parser_operator(tokensList: TokensList, expected: Expression):
+    make_positive_test(parser_expression_operator, tokensList, expected)
+
+

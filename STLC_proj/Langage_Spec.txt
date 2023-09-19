@@ -1,7 +1,7 @@
 expression : variable                                  ... (YA)
     | literal                                          ... (YA)
     | "(" expression expression ")"
-    |"\" variable "->"  expression                     ... (YA)
+    |"\" variable "->"  expression                     
     | "(" expression operator expression ")"
     | "if" expression "then" expression "else" expression
     | "(" expression ":" type ")"
